@@ -1,8 +1,10 @@
 import logging
+from textwrap import dedent
 
 from environs import Env
+from google.cloud import dialogflow
 from telegram import ForceReply, Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
 
 logger = logging.getLogger(__name__)
@@ -22,9 +24,35 @@ async def help_command(update, context):
     await update.message.reply_text("Help!")
 
 
+def detect_intent_texts(project_id, session_id, text, language_code):
+
+    session_client = dialogflow.SessionsClient()
+
+    session = session_client.session_path(project_id, session_id)
+    print("Session path: {}\n".format(session))
+    text_input = dialogflow.TextInput(text=text, language_code=language_code)
+
+    query_input = dialogflow.QueryInput(text=text_input)
+
+    response = session_client.detect_intent(
+        request={"session": session, "query_input": query_input}
+    )
+
+    # return dedent(f'''
+    #     Query text: {response.query_result.query_text}\n
+    #     Detected intent: {response.query_result.intent.display_name} (confidence: {response.query_result.intent_detection_confidence})\n
+    #     Fulfillment text: {response.query_result.fulfillment_text}\n
+    # ''')
+
+    return response.query_result.fulfillment_text
+
+
 async def echo(update, context):
-    """Echo the user message."""
-    await update.message.reply_text(update.message.text)
+    project_id = 'instant-duality-351619'
+    user_id = update.effective_user.id
+    text = update.message.text
+    query_text = detect_intent_texts(project_id, user_id, text, 'Russian-ru')
+    await update.message.reply_text(query_text)
 
 
 def main() -> None:
