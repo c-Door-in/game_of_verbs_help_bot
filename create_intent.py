@@ -1,16 +1,10 @@
+import argparse
 import requests
 from environs import Env
 from google.cloud import dialogflow
 
 
-def get_phrases_json(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    return response.json()
-
-
 def create_intent(project_id, display_name, training_phrases_parts, message_texts):
-    """Create an intent of the given intent type."""
 
     intents_client = dialogflow.IntentsClient()
 
@@ -39,16 +33,19 @@ def create_intent(project_id, display_name, training_phrases_parts, message_text
 def main():
     env = Env()
     env.read_env()
-    training_phrases_url = 'https://dvmn.org/media/filer_public/a7/db/a7db66c0-1259-4dac-9726-2d1fa9c44f20/questions.json'
-    response = requests.get(training_phrases_url)
+    parser = argparse.ArgumentParser(description='Create intent with training phrases')
+    parser.add_argument('training_phrases_url', type=str, help='URL path to training phrases file.')
+    parser.add_argument('display_name', type=str, help='Intent name')
+    args = parser.parse_args()
+    response = requests.get(args.training_phrases_url)
     response.raise_for_status()
     phrases_json = response.json()
 
-    project_id = 'instant-duality-351619'
-    display_name = 'Устройство на работу'
+    dialogflow_project_id = env.str('DIALOGFLOW_PROJECT_ID')
+    display_name = args.display_name
     training_phrases_parts = phrases_json[display_name]['questions']
     message_texts = [phrases_json[display_name]['answer']]
-    create_intent(project_id, display_name, training_phrases_parts, message_texts)
+    create_intent(dialogflow_project_id, display_name, training_phrases_parts, message_texts)
 
 
 if __name__ == '__main__':
