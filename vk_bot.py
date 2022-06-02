@@ -24,14 +24,8 @@ def detect_intent_texts(project_id, session_id, text, language_code):
     response = session_client.detect_intent(
         request={"session": session, "query_input": query_input}
     )
-
-    # return dedent(f'''
-    #     Query text: {response.query_result.query_text}\n
-    #     Detected intent: {response.query_result.intent.display_name} (confidence: {response.query_result.intent_detection_confidence})\n
-    #     Fulfillment text: {response.query_result.fulfillment_text}\n
-    # ''')
-
-    return response.query_result.fulfillment_text
+    if not response.query_result.intent.is_fallback:
+        return response.query_result.fulfillment_text
 
 
 def echo(event, vk_api, response_text):
@@ -71,7 +65,8 @@ def main() -> None:
             print('Новое сообщение:')
             print('Для меня от: ', event.user_id)
             print('Текст:', event.text)
-            echo(event, vk_api, response_text)
+            if response_text:
+                echo(event, vk_api, response_text)
 
 
 if __name__ == "__main__":
