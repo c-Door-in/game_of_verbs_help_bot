@@ -33,10 +33,12 @@ def create_intent(project_id, display_name, training_phrases_parts, message_text
 def main():
     env = Env()
     env.read_env()
+
     parser = argparse.ArgumentParser(description='Create intent with training phrases')
     parser.add_argument('training_phrases_url', type=str, help='URL path to training phrases file.')
     parser.add_argument('display_name', type=str, help='Intent name')
     args = parser.parse_args()
+    
     response = requests.get(args.training_phrases_url)
     response.raise_for_status()
     phrases_json = response.json()
