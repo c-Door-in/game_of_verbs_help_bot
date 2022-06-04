@@ -1,12 +1,11 @@
 import logging
-from textwrap import dedent
 from time import sleep
 
 import telegram
 from environs import Env
 from google.cloud import dialogflow
 from telegram import ForceReply
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 
 
 logger = logging.getLogger(__name__)
@@ -24,12 +23,17 @@ class TelegramLogsHandler(logging.Handler):
         self.tg_bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
-async def start(update, context):
+def start(update, context):
     user = update.effective_user
-    await update.message.reply_html(
+    update.message.reply_html(
         rf"Здравствуйте, {user.mention_html()}!",
         reply_markup=ForceReply(selective=True),
     )
+
+
+def bad_command(update, context):
+    logger.warning('inside bad')
+    context.bot.wrong_method_name()
 
 
 def detect_intent_texts(project_id, session_id, text, language_code):
@@ -44,37 +48,59 @@ def detect_intent_texts(project_id, session_id, text, language_code):
     return response.query_result.fulfillment_text
 
 
-async def echo(update, context):
+def echo(update, context):
     project_id = 'instant-duality-351619'
     user_id = update.effective_user.id
     text = update.message.text
     query_text = detect_intent_texts(project_id, user_id, text, 'Russian-ru')
-    await update.message.reply_text(query_text)
+    update.message.reply_text(query_text)
+
+
+def error_handler(update, context):
+    logger.error(msg="Исключение при обработке сообщения:", exc_info=context.error)
 
 
 def main():
-    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    fmtstr = '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s'
+    fmtdate = '%H:%M:%S'
+    formater = logging.Formatter(fmtstr, fmtdate)
+    ch.setFormatter(formater)
+    logger.addHandler(ch)
+    
+    logger.warning('Start program')
 
     env = Env()
     env.read_env()
-
-    tg_admin_chat_id = env.str('TG_ADMIN_CHAT_ID')
-    tg_admin_bot = telegram.Bot(token=env.str('TG_ADMIN_BOT_TOKEN'))
-    tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_admin_chat_id)
+    tg_chat_id = env.str('TG_CHAT_ID')
+    tg_admin_bot = telegram.Bot(env.str('TG_ADMIN_BOT_TOKEN'))
+    tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_chat_id)
     tg_logs_handler.setLevel(logging.WARNING)
     logger.addHandler(tg_logs_handler)
 
-    while True:
-        try:
-            application = ApplicationBuilder().token(env.str("TG_TOKEN")).build()
-            application.add_handler(CommandHandler("start", start))
-            application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-            application.run_polling()
-        except Exception:
-            logger.exception('Ошибка в game-of-verbs-help-tg-bot. Перезапуск через 15 секунд.')
-            sleep(15)
+    updater = Updater(token=env.str("TGBOT_TOKEN"))
+    dispatcher = updater.dispatcher
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("bad_command", bad_command))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    dispatcher.add_error_handler(error_handler)
+    
+    # tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_chat_id)
+    # tg_logs_handler.setLevel(logging.WARNING)
+    # logger.addHandler(tg_logs_handler)
+    logger.warning('Проверка')
+
+    updater.start_polling()
+    updater.idle()
+        
 
 
 if __name__ == "__main__":
-    main()
+    while True:
+        try:
+            main()
+        except Exception:
+            logger.exception('Ошибка в game-of-verbs-help-tg-bot. Перезапуск через 15 секунд.')
+            sleep(15)
