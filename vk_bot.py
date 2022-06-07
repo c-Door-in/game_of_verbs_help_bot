@@ -52,18 +52,19 @@ def echo(event, vk_api, response_text):
 
 
 def main():
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logger.warning('Start vk bot')
 
     env = Env()
     env.read_env()
 
-    tg_admin_chat_id = env.str('TG_CHAT_ID')
-    tg_admin_bot = telegram.Bot(token=env.str('TG_ADMIN_BOT_TOKEN'))
-    tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_admin_chat_id)
-    tg_logs_handler.setLevel(logging.WARNING)
-    logger.addHandler(tg_logs_handler)
-    logger.warning('Проверка')
+    tg_admin_bot = telegram.Bot(token=env.str('TG_ADMIN_BOT_TOKEN', None))
+    if tg_admin_bot:
+        tg_admin_chat_id = env.str('TG_ADMIN_CHAT_ID')
+        tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_admin_chat_id)
+        tg_logs_handler.setLevel(logging.WARNING)
+        logger.addHandler(tg_logs_handler)
 
     dialogflow_project_id = env.str('DIALOGFLOW_PROJECT_ID')
     vk_session = vk.VkApi(token=env.str('VK_TOKEN'))

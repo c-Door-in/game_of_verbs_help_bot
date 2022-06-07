@@ -31,11 +31,6 @@ def start(update, context):
     )
 
 
-def bad_command(update, context):
-    logger.warning('inside bad')
-    context.bot.wrong_method_name()
-
-
 def detect_intent_texts(project_id, session_id, text, language_code):
     session_client = dialogflow.SessionsClient()
     session = session_client.session_path(project_id, session_id)
@@ -49,19 +44,15 @@ def detect_intent_texts(project_id, session_id, text, language_code):
 
 
 def echo(update, context):
-    project_id = 'instant-duality-351619'
+    project_id = context.bot_data['dialodflow_project_id']
     user_id = update.effective_user.id
     text = update.message.text
     query_text = detect_intent_texts(project_id, user_id, text, 'Russian-ru')
     update.message.reply_text(query_text)
 
 
-def error_handler(update, context):
-    logger.error(msg="Исключение при обработке сообщения:", exc_info=context.error)
-
-
 def main():
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
     fmtstr = '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s'
@@ -70,32 +61,27 @@ def main():
     ch.setFormatter(formater)
     logger.addHandler(ch)
     
-    logger.warning('Start program')
+    logger.warning('Start tg bot')
 
     env = Env()
     env.read_env()
-    tg_chat_id = env.str('TG_CHAT_ID')
-    tg_admin_bot = telegram.Bot(env.str('TG_ADMIN_BOT_TOKEN'))
-    tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_chat_id)
-    tg_logs_handler.setLevel(logging.WARNING)
-    logger.addHandler(tg_logs_handler)
+    dialodflow_project_id = env.str('DIALOGFLOW_PROJECT_ID')
+    tg_admin_bot = telegram.Bot(env.str('TG_ADMIN_BOT_TOKEN', None))
+    if tg_admin_bot:
+        tg_admin_chat_id = env.str('TG_ADMIN_CHAT_ID')
+        tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_admin_chat_id)
+        tg_logs_handler.setLevel(logging.WARNING)
+        logger.addHandler(tg_logs_handler)
 
     updater = Updater(token=env.str("TGBOT_TOKEN"))
     dispatcher = updater.dispatcher
+    dispatcher.bot_data = {'dialodflow_project_id': dialodflow_project_id}
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("bad_command", bad_command))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
-    dispatcher.add_error_handler(error_handler)
-    
-    # tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_chat_id)
-    # tg_logs_handler.setLevel(logging.WARNING)
-    # logger.addHandler(tg_logs_handler)
-    logger.warning('Проверка')
 
     updater.start_polling()
     updater.idle()
         
-
 
 if __name__ == "__main__":
     while True:
