@@ -1,8 +1,11 @@
 import argparse
 import json
 import pathlib
+
 from environs import Env
 from google.cloud import dialogflow
+from google.api_core.exceptions import InvalidArgument
+
 
 
 def create_intent(project_id, intent_name, intent_raw):
@@ -47,7 +50,10 @@ def main():
         intents_json = json.load(json_file)
 
     for intent_name, intent_raw in intents_json.items():
-        create_intent(dialogflow_project_id, intent_name, intent_raw)
+        try:
+            create_intent(dialogflow_project_id, intent_name, intent_raw)
+        except InvalidArgument as e:
+            print(e)
 
 
 if __name__ == '__main__':
