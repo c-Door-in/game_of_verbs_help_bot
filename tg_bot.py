@@ -3,15 +3,14 @@ from time import sleep
 
 import telegram
 from environs import Env
-from google.cloud import dialogflow
 from telegram import ForceReply
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 
 from loghandlers import TelegramLogsHandler
+from detect_intent_texts import detect_intent_texts
 
 
 logger = logging.getLogger(__name__)
-
 
 def start(update, context):
     user = update.effective_user
@@ -19,18 +18,6 @@ def start(update, context):
         rf"Здравствуйте, {user.mention_html()}!",
         reply_markup=ForceReply(selective=True),
     )
-
-
-def detect_intent_texts(project_id, session_id, text, language_code):
-    session_client = dialogflow.SessionsClient()
-    session = session_client.session_path(project_id, session_id)
-    logger.info(f"Session path: {session}")
-    text_input = dialogflow.TextInput(text=text, language_code=language_code)
-    query_input = dialogflow.QueryInput(text=text_input)
-    response = session_client.detect_intent(
-        request={"session": session, "query_input": query_input}
-    )
-    return response.query_result.fulfillment_text
 
 
 def echo(update, context):
