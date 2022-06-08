@@ -50,21 +50,20 @@ def main():
         tg_logs_handler = TelegramLogsHandler(tg_admin_bot, tg_admin_chat_id)
         tg_logs_handler.setLevel(logging.WARNING)
         logger.addHandler(tg_logs_handler)
-
-    updater = Updater(token=env.str("TGBOT_TOKEN"))
-    dispatcher = updater.dispatcher
-    dispatcher.bot_data = {'dialodflow_project_id': dialodflow_project_id}
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, send_response))
-
-    updater.start_polling()
-    updater.idle()
-        
-
-if __name__ == "__main__":
     while True:
         try:
-            main()
+            updater = Updater(token=env.str("TGBOT_TOKEN"))
+            dispatcher = updater.dispatcher
+            dispatcher.bot_data = {'dialodflow_project_id': dialodflow_project_id}
+            dispatcher.add_handler(CommandHandler("start", start))
+            dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, send_response))
+
+            updater.start_polling()
+            updater.idle()
         except Exception:
             logger.exception('Ошибка в game-of-verbs-help-tg-bot. Перезапуск через 15 секунд.')
             sleep(15)
+        
+
+if __name__ == "__main__":
+    main()

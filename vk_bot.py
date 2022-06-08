@@ -44,30 +44,29 @@ def main():
 
     dialogflow_project_id = env.str('DIALOGFLOW_PROJECT_ID')
     vk_session = vk.VkApi(token=env.str('VK_TOKEN'))
-    vk_api = vk_session.get_api()
-    longpoll = VkLongPoll(vk_session)
-    for event in longpoll.listen():
-        if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            response_text = detect_intent_texts(
-                dialogflow_project_id,
-                event.user_id,
-                event.text,
-                'Russian-ru',
-            )
-            logger.debug(dedent(f'''
-                Новое сообщение:
-                Для меня от: {event.user_id}
-                Текст: {event.text}'''
-            ))
-            if response_text:
-                send_response(event, vk_api, response_text)
-        
-
-
-if __name__ == "__main__":
     while True:
         try:
-            main()
+            vk_api = vk_session.get_api()
+            longpoll = VkLongPoll(vk_session)
+            for event in longpoll.listen():
+                if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+                    response_text = detect_intent_texts(
+                        dialogflow_project_id,
+                        event.user_id,
+                        event.text,
+                        'Russian-ru',
+                    )
+                    logger.debug(dedent(f'''
+                        Новое сообщение:
+                        Для меня от: {event.user_id}
+                        Текст: {event.text}'''
+                    ))
+                    if response_text:
+                        send_response(event, vk_api, response_text)
         except Exception:
             logger.exception('Ошибка в game-of-verbs-help-vk-bot. Перезапуск через 15 секунд.')
             sleep(15)
+
+
+if __name__ == "__main__":
+    main()
