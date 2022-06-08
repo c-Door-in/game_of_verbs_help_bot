@@ -14,11 +14,11 @@ from detect_intent_texts import detect_intent_texts
 
 logger = logging.getLogger(__name__)
 
-def echo(event, vk_api, response_text):
+def send_response(event, vk_api, response_text):
     vk_api.messages.send(
         user_id=event.user_id,
         message=response_text,
-        random_id=random.randint(1,1000)
+        random_id=random.randint(1, 1000)
     )
     logger.debug(dedent(f'''
         Новое сообщение:
@@ -60,7 +60,7 @@ def main():
                 Текст: {event.text}'''
             ))
             if response_text:
-                echo(event, vk_api, response_text)
+                send_response(event, vk_api, response_text)
         
 
 

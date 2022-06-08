@@ -20,7 +20,7 @@ def start(update, context):
     )
 
 
-def echo(update, context):
+def send_response(update, context):
     project_id = context.bot_data['dialodflow_project_id']
     user_id = update.effective_user.id
     text = update.message.text
@@ -55,7 +55,7 @@ def main():
     dispatcher = updater.dispatcher
     dispatcher.bot_data = {'dialodflow_project_id': dialodflow_project_id}
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, send_response))
 
     updater.start_polling()
     updater.idle()
