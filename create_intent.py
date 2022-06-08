@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import pathlib
 
 from environs import Env
@@ -7,6 +8,7 @@ from google.cloud import dialogflow
 from google.api_core.exceptions import InvalidArgument
 
 
+logger = logging.getLogger(__name__)
 
 def create_intent(project_id, intent_name, intent_raw):
 
@@ -34,10 +36,13 @@ def create_intent(project_id, intent_name, intent_raw):
         request={"parent": parent, "intent": intent}
     )
 
-    print("Intent created: {}".format(response))
+    logger.info("Intent created: {}".format(response))
 
 
 def main():
+    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logger.setLevel(logging.INFO)
+
     env = Env()
     env.read_env()
     dialogflow_project_id = env.str('DIALOGFLOW_PROJECT_ID')
@@ -52,8 +57,8 @@ def main():
     for intent_name, intent_raw in intents_json.items():
         try:
             create_intent(dialogflow_project_id, intent_name, intent_raw)
-        except InvalidArgument as e:
-            print(e)
+        except InvalidArgument:
+            logger.exception('Failed to create intent')
 
 
 if __name__ == '__main__':
