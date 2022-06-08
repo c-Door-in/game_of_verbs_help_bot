@@ -50,7 +50,7 @@ def main():
             longpoll = VkLongPoll(vk_session)
             for event in longpoll.listen():
                 if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-                    response_text = detect_intent_texts(
+                    response_text, is_fallback = detect_intent_texts(
                         dialogflow_project_id,
                         event.user_id,
                         event.text,
@@ -61,7 +61,7 @@ def main():
                         Для меня от: {event.user_id}
                         Текст: {event.text}'''
                     ))
-                    if response_text:
+                    if not is_fallback:
                         send_response(event, vk_api, response_text)
         except Exception:
             logger.exception('Ошибка в game-of-verbs-help-vk-bot. Перезапуск через 15 секунд.')
