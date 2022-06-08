@@ -24,8 +24,9 @@ def echo(update, context):
     project_id = context.bot_data['dialodflow_project_id']
     user_id = update.effective_user.id
     text = update.message.text
-    query_text = detect_intent_texts(project_id, user_id, text, 'Russian-ru')
-    update.message.reply_text(query_text)
+    response_text = detect_intent_texts(project_id, user_id, text, 'Russian-ru')
+    if response_text:
+        update.message.reply_text(response_text)
 
 
 def main():
